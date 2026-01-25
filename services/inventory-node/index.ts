@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 import Auction, { type IAuction } from './models/Auction.js';
 
 // Connect to MongoDB
-mongoose.connect('mongodb://localhost:27017/inventory')
+mongoose.connect('mongodb://localhost:27018/inventory')
   .then(() => console.log('✅ Inventory DB Connected'))
   .catch(err => console.error('❌ DB Connection Error:', err));
 

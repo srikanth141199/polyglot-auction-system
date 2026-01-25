@@ -19,7 +19,7 @@ services:
     image: mongo:latest
     container_name: inventory-db
     ports:
-      - "27017:27017"
+      - "27018:27017"
     volumes:
       - ./infra/mongodb:/data/db
 
