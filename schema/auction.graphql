@@ -1,0 +1,27 @@
+type Auction @key(fields: "id") {
+  id: ID!
+  title: String!
+  description: String
+  startingPrice: Float!
+  currentBid: Float
+  endTime: String!
+  # This field will be resolved by the Go Bidding Service
+  bids: [Bid]
+}
+
+type Bid {
+  id: ID!
+  amount: Float!
+  bidderId: ID!
+  timestamp: String!
+}
+
+type Query {
+  activeAuctions: [Auction]
+  auction(id: ID!): Auction
+}
+
+type Mutation {
+  # This will be handled by the Go Service
+  placeBid(auctionId: ID!, amount: Float!): Bid
+}
