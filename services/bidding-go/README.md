@@ -1,4 +1,4 @@
-### 📂 2. Bidding Service (`/services/bidding-go`)
+### 📂 Bidding Service (`/services/bidding-go`)
 
 # Bidding Transaction Service (Go)
 
