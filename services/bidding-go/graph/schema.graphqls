@@ -1,3 +1,7 @@
+extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.0",
+        import: ["@key", "@external"])
+
 type Auction @key(fields: "id") {
   id: ID! @external
   bids: [Bid]
@@ -11,8 +15,7 @@ type Bid {
 }
 
 type Query {
-  # This acts as the entry point for the service
-  auction(id: ID!): Auction
+  _serviceMetadata: String
 }
 
 type Mutation {

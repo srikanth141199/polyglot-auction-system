@@ -3,12 +3,8 @@
 package model
 
 type Auction struct {
-	ID            string  `json:"id"`
-	Title         string  `json:"title"`
-	Description   *string `json:"description,omitempty"`
-	StartingPrice float64 `json:"startingPrice"`
-	EndTime       string  `json:"endTime"`
-	Bids          []*Bid  `json:"bids,omitempty"`
+	ID   string `json:"id"`
+	Bids []*Bid `json:"bids,omitempty"`
 }
 
 func (Auction) IsEntity() {}
