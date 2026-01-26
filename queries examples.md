@@ -11,6 +11,8 @@ Service	Technology	Port	URL
 
 🔍 1. Inventory Service (Port 5002)
 
+![Inventory](inventory.png)
+
 Handles the Product / Auction metadata side of the system.
 Data is stored in MongoDB.
 
@@ -38,6 +40,8 @@ query GetItems {
 
 
 🔍 2. Bidding Service (Port 8080)
+
+![biddingApp](bidding.png)
 
 Handles the Transactional / Bidding logic.
 Data is stored in PostgreSQL.
@@ -87,6 +91,8 @@ Variables
 
 
 🔍 3. Unified Gateway Queries (Port 4000)
+
+![Gateway](gateway.png)
 
 This is the main interview showcase 🎯
 Demonstrates a real federated JOIN between MongoDB (Inventory) and PostgreSQL (Bidding).
