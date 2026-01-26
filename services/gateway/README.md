@@ -1,12 +1,35 @@
-I used Runtime Composition. Instead of manually merging schema files every time I added a field in Go or Node, I configured the Gateway to introspect both subgraphs on startup. It stitches them into a single Federated Supergraph, allowing the frontend to treat multiple microservices as a single, unified API.
+### 📂 3. Apollo Gateway (`/gateway`)
 
+```markdown
+# Polyglot Auction Gateway
 
+The central entry point for the entire system. It composes the two subgraphs (Inventory and Bidding) into a single, unified GraphQL schema.
 
-Service,Port,Database,Role
-Inventory,5002,MongoDB,Product Catalog
-Bidding,8080,PostgreSQL,High-speed Bidding
-Gateway,4000,(N/A),Unified API Entry
+## 🚀 Tech Stack
+- **Runtime:** Node.js
+- **Framework:** Apollo Gateway
+- **Architecture:** Federated Supergraph
 
+## 📍 Endpoint
+- **URL:** `http://localhost:4000/graphql`
 
+## 🔑 Key Features
+- **Schema Composition:** Merges NoSQL (Mongo) and Relational (Postgres) data seamlessly.
+- **Query Routing:** Automatically routes metadata requests to Node.js and transaction requests to Go.
+- **Query Orchestration:** Performs the "Join" across services to fulfill complex requests in one round-trip.
 
-I used the node: prefix (e.g., node:http) because it is the modern standard for Node.js built-in modules. It makes it explicitly clear that the module is a built-in Node.js feature and prevents potential naming conflicts with third-party packages installed via NPM.
+## 🛠️ Setup
+1. `npm install`
+2. Ensure both subgraphs (Port 5002 and 8080) are running.
+3. `npm start`
+
+## 📖 The "Join" Query
+```graphql
+query {
+  activeAuctions {
+    title       # From MongoDB (Inventory)
+    bids {      # From PostgreSQL (Bidding)
+      amount
+    }
+  }
+}

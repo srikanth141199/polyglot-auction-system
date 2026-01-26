@@ -1,141 +1,83 @@
-🏆 Polyglot Real-Time Auction Ecosystem
+# 🏆 Polyglot Real-Time Auction Ecosystem
 
-A high-performance, distributed microservices system designed to handle real-time bidding, inventory management, and instant user notifications.
+A high-performance, distributed microservices system designed to handle real-time bidding, inventory management, and instant user notifications. This project demonstrates a **Polyglot Microservices Architecture**, where each service uses the technology best suited to its specific business problem, optimizing for performance, scalability, and maintainability.
 
-This project demonstrates a Polyglot Microservices Architecture, where each service uses the technology best suited to its specific business problem, optimizing for performance, scalability, and maintainability.
+---
 
+## 🏗️ Architecture Overview
 
-
-🚀 Architecture Overview
-
-The system is built around event-driven microservices with real-time communication and strong data consistency guarantees.
-
-Key Goals
-
-Ultra-low latency bidding
-
-High concurrency support
-
-Real-time user updates
-
-Clear separation of responsibilities
-
-Scalable and production-ready design
+The system is built around **Apollo Federation 2.0**, orchestrating event-driven microservices that bridge the gap between NoSQL and Relational databases.
 
 
 
-🧠 Technology Stack & Rationale
+### 🎯 Key Goals
+* **Ultra-low latency bidding:** Powered by Go's high-concurrency model.
+* **High concurrency support:** Scalable subgraphs for inventory and notifications.
+* **Real-time user updates:** Event-driven architecture via RabbitMQ and WebSockets.
+* **Polyglot Persistence:** Matching the database engine (MongoDB/PostgreSQL) to the data's nature.
 
-| Technology                  | Role                              | Why This Choice (Interview Talking Point)                                                                                                                        |
-| --------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Go (Golang)**             | Bidding Engine                    | Go’s goroutines and lightweight concurrency model enable handling thousands of bids concurrently with minimal latency. Perfect for time-sensitive auction logic. |
-| **Node.js + TypeScript**    | Inventory & Notification Services | Node’s non-blocking I/O excels at I/O-heavy tasks like catalog management and persistent WebSocket connections for live notifications.                           |
-| **React**                   | Bidder Application                | Optimized for fast-paced UI updates. React hooks and the virtual DOM efficiently handle live auction tickers and bid updates.                                    |
-| **Angular**                 | Admin Dashboard                   | Angular’s structured architecture, RxJS streams, and powerful form validation are ideal for complex, data-heavy admin workflows.                                 |
-| **GraphQL (Federation)**    | API Gateway                       | A single federated GraphQL gateway unifies data from multiple services, allowing the frontend to fetch exactly what it needs in one request.                     |
-| **RabbitMQ**                | Event Broker                      | Enables asynchronous, decoupled communication. Bidding remains fast while notifications are handled independently.                                               |
-| **PostgreSQL**              | Bidding Database                  | Provides ACID compliance and strong transactional guarantees, ensuring financial integrity and preventing race conditions in bids.                               |
-| **MongoDB**                 | Inventory Database                | Flexible schema supports diverse product attributes, descriptions, and image metadata without rigid constraints.                                                 |
-| **Docker & Docker Compose** | Orchestration                     | Ensures all services and databases run consistently across environments with a single command.                                                                   |
+---
 
+## 🧠 Technology Stack & Rationale
 
-🏗️ System Design
+| Technology | Role | Why This Choice (Interview Talking Point) |
+| :--- | :--- | :--- |
+| **Go (Golang)** | Bidding Engine | Goroutines enable handling thousands of bids concurrently with minimal latency. Perfect for time-sensitive logic. |
+| **Node.js + TS** | Inventory Service | Non-blocking I/O excels at catalog management and I/O-heavy metadata tasks. |
+| **GraphQL (Federation)** | API Gateway | Unifies data from multiple services, allowing the frontend to fetch exactly what it needs in one request. |
+| **PostgreSQL** | Bidding Database | Provides ACID compliance and strong transactional guarantees for financial integrity. |
+| **MongoDB** | Inventory Database | Flexible schema supports diverse product attributes and image metadata without rigid constraints. |
+| **RabbitMQ** | Event Broker | Enables asynchronous communication. Bidding remains fast while notifications are handled independently. |
+
+---
+
+## 🏗️ System Design
 
 The system is divided into four core microservices, each with a clearly defined responsibility:
 
-1️⃣ Bidding Service (Go)
+### 1️⃣ Bidding Service (Go @ Port 8080)
+* Processes incoming bids and maintains auction timers.
+* Ensures atomic bid placement using **PostgreSQL** transactions.
+* **Federation:** Extends the `Auction` entity to provide real-time bid history.
+* Publishes bid events to **RabbitMQ**.
 
-Core auction engine
+### 2️⃣ Inventory Service (Node.js @ Port 5002)
+* Manages auction listings and product catalogs.
+* Stores flexible product data in **MongoDB**.
+* **Federation:** Acts as the primary owner of the `Auction` entity.
 
-Processes incoming bids
+### 3️⃣ API Gateway (Apollo @ Port 4000)
+* The single entry point for all clients (React/Angular).
+* Performs "Query Orchestration" to join MongoDB metadata and PostgreSQL transaction data.
 
-Maintains auction timers
-
-Ensures atomic bid placement using PostgreSQL transactions
-
-Publishes bid events to RabbitMQ
-
-2️⃣ Inventory Service (Node.js + TypeScript)
-
-Manages auction listings and product catalogs
-
-Handles categories, pricing metadata, and images
-
-Stores flexible product data in MongoDB
-
-Exposes GraphQL subgraph for the gateway
-
-3️⃣ Notification Service (Node.js + TypeScript)
-
-Listens to bid events from RabbitMQ
-
-Pushes real-time notifications via WebSockets
-
-Handles events like:
-
-Outbid alerts
-
-Auction won notifications
-
-Auction end updates
-
-4️⃣ API Gateway (GraphQL Federation)
-
-Acts as the single entry point for all clients
-
-Combines multiple subgraphs into a Supergraph
-
-Allows frontends to query Go and Node services in one request
-
-Reduces over-fetching and network round trips
-
-🔄 Event-Driven Flow (High Level)
-
-User places a bid from the React Bidder App
-
-Request hits the GraphQL Gateway
-
-Bid is processed by the Go Bidding Service
-
-Bid event is published to RabbitMQ
-
-Notification Service consumes the event
-
-Real-time updates are pushed to connected users via WebSockets
+### 4️⃣ Notification Service (Node.js)
+* Listens to RabbitMQ events and pushes updates via WebSockets.
+* Handles Outbid alerts and "Auction Won" notifications.
 
 
 
-📦 Project Structure
+---
 
-apps/
- ├── bidder-react/
- └── admin-angular/
+## 🔄 Federated Data Flow
 
-services/
- ├── bidding-go/
- ├── inventory-node/
- ├── notif-node/
- └── gateway/
+1. **User places a bid** via the Frontend.
+2. **Gateway (Port 4000)** routes the mutation to the **Go Bidding Service (Port 8080)**.
+3. **Go Service** validates the bid and saves it to **PostgreSQL**.
+4. **Go Service** emits an event to **RabbitMQ**.
+5. When a user queries `activeAuctions`, the **Gateway** fetches titles from **MongoDB** and joins the latest bids from **PostgreSQL** in a single response.
 
-infra/
- ├── postgres/
- ├── mongodb/
- └── rabbitmq/
+---
 
-docker-compose.yml
-README.md
+## 📦 Project Structure
 
-
-This will start:
-
-4 microservices
-
-PostgreSQL
-
-MongoDB
-
-RabbitMQ
-
-GraphQL Gateway
-
-All services will be available locally with consistent networking.
+```text
+├── apps/
+│    ├── bidder-react/      # Bidder UI
+│    └── admin-angular/     # Admin Dashboard
+├── services/
+│    ├── bidding-go/        # Go 1.23, gqlgen, PostgreSQL
+│    ├── inventory-node/    # Node.js, Yoga, MongoDB
+│    └── gateway/           # Apollo Gateway
+└── infra/
+     ├── postgres/          # Relational data
+     └── mongodb/           # Document data
