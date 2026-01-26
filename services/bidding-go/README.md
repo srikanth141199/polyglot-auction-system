@@ -1,6 +1,5 @@
 ### 📂 2. Bidding Service (`/services/bidding-go`)
 
-```markdown
 # Bidding Transaction Service (Go)
 
 High-performance service responsible for managing all bidding transactions. It "extends" the Auction entity provided by the Inventory service.
