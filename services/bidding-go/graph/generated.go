@@ -39,6 +39,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Auction() AuctionResolver
 	Entity() EntityResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
@@ -50,7 +51,6 @@ type DirectiveRoot struct {
 type ComplexityRoot struct {
 	Auction struct {
 		Bids          func(childComplexity int) int
-		CurrentBid    func(childComplexity int) int
 		Description   func(childComplexity int) int
 		EndTime       func(childComplexity int) int
 		ID            func(childComplexity int) int
@@ -85,6 +85,9 @@ type ComplexityRoot struct {
 	}
 }
 
+type AuctionResolver interface {
+	Bids(ctx context.Context, obj *model.Auction) ([]*model.Bid, error)
+}
 type EntityResolver interface {
 	FindAuctionByID(ctx context.Context, id string) (*model.Auction, error)
 }
@@ -121,12 +124,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Auction.Bids(childComplexity), true
-	case "Auction.currentBid":
-		if e.complexity.Auction.CurrentBid == nil {
-			break
-		}
-
-		return e.complexity.Auction.CurrentBid(childComplexity), true
 	case "Auction.description":
 		if e.complexity.Auction.Description == nil {
 			break
@@ -353,13 +350,16 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "../../../schema/auction.graphql", Input: `type Auction @key(fields: "id") {
+	{Name: "../../../schema/auction.graphql", Input: `extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.0",
+        import: ["@key", "@shareable", "@external", "@requires"])
+
+type Auction @key(fields: "id") {
   id: ID!
-  title: String!
-  description: String
-  startingPrice: Float!
-  currentBid: Float
-  endTime: String!
+  title: String! @shareable
+  description: String @shareable
+  startingPrice: Float! @shareable
+  endTime: String! @shareable
   # This field will be resolved by the Go Bidding Service
   bids: [Bid]
 }
@@ -377,7 +377,6 @@ type Query {
 }
 
 type Mutation {
-  # This will be handled by the Go Service
   placeBid(auctionId: ID!, amount: Float!): Bid
 }`, BuiltIn: false},
 	{Name: "../federation/directives.graphql", Input: `
@@ -684,35 +683,6 @@ func (ec *executionContext) fieldContext_Auction_startingPrice(_ context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _Auction_currentBid(ctx context.Context, field graphql.CollectedField, obj *model.Auction) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Auction_currentBid,
-		func(ctx context.Context) (any, error) {
-			return obj.CurrentBid, nil
-		},
-		nil,
-		ec.marshalOFloat2ᚖfloat64,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Auction_currentBid(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Auction",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Float does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Auction_endTime(ctx context.Context, field graphql.CollectedField, obj *model.Auction) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -749,7 +719,7 @@ func (ec *executionContext) _Auction_bids(ctx context.Context, field graphql.Col
 		field,
 		ec.fieldContext_Auction_bids,
 		func(ctx context.Context) (any, error) {
-			return obj.Bids, nil
+			return ec.resolvers.Auction().Bids(ctx, obj)
 		},
 		nil,
 		ec.marshalOBid2ᚕᚖbiddingᚑserviceᚋgraphᚋmodelᚐBid,
@@ -762,8 +732,8 @@ func (ec *executionContext) fieldContext_Auction_bids(_ context.Context, field g
 	fc = &graphql.FieldContext{
 		Object:     "Auction",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
@@ -930,8 +900,6 @@ func (ec *executionContext) fieldContext_Entity_findAuctionByID(ctx context.Cont
 				return ec.fieldContext_Auction_description(ctx, field)
 			case "startingPrice":
 				return ec.fieldContext_Auction_startingPrice(ctx, field)
-			case "currentBid":
-				return ec.fieldContext_Auction_currentBid(ctx, field)
 			case "endTime":
 				return ec.fieldContext_Auction_endTime(ctx, field)
 			case "bids":
@@ -1037,8 +1005,6 @@ func (ec *executionContext) fieldContext_Query_activeAuctions(_ context.Context,
 				return ec.fieldContext_Auction_description(ctx, field)
 			case "startingPrice":
 				return ec.fieldContext_Auction_startingPrice(ctx, field)
-			case "currentBid":
-				return ec.fieldContext_Auction_currentBid(ctx, field)
 			case "endTime":
 				return ec.fieldContext_Auction_endTime(ctx, field)
 			case "bids":
@@ -1083,8 +1049,6 @@ func (ec *executionContext) fieldContext_Query_auction(ctx context.Context, fiel
 				return ec.fieldContext_Auction_description(ctx, field)
 			case "startingPrice":
 				return ec.fieldContext_Auction_startingPrice(ctx, field)
-			case "currentBid":
-				return ec.fieldContext_Auction_currentBid(ctx, field)
 			case "endTime":
 				return ec.fieldContext_Auction_endTime(ctx, field)
 			case "bids":
@@ -2806,29 +2770,58 @@ func (ec *executionContext) _Auction(ctx context.Context, sel ast.SelectionSet, 
 		case "id":
 			out.Values[i] = ec._Auction_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "title":
 			out.Values[i] = ec._Auction_title(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "description":
 			out.Values[i] = ec._Auction_description(ctx, field, obj)
 		case "startingPrice":
 			out.Values[i] = ec._Auction_startingPrice(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
-		case "currentBid":
-			out.Values[i] = ec._Auction_currentBid(ctx, field, obj)
 		case "endTime":
 			out.Values[i] = ec._Auction_endTime(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "bids":
-			out.Values[i] = ec._Auction_bids(ctx, field, obj)
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Auction_bids(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4236,23 +4229,6 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	_ = ctx
 	res := graphql.MarshalBoolean(*v)
 	return res
-}
-
-func (ec *executionContext) unmarshalOFloat2ᚖfloat64(ctx context.Context, v any) (*float64, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := graphql.UnmarshalFloatContext(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel ast.SelectionSet, v *float64) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	_ = sel
-	res := graphql.MarshalFloatContext(*v)
-	return graphql.WrapContextMarshaler(ctx, res)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v any) (string, error) {

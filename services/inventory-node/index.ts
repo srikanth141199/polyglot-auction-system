@@ -1,7 +1,7 @@
 import express from 'express';
 import { createYoga, createSchema } from 'graphql-yoga';
 import mongoose from 'mongoose';
-import Auction, { type IAuction } from './models/Auction.js';
+import { Auction, type IAuction } from './models/Auction.js';
 
 // Connect to MongoDB
 mongoose.connect('mongodb://localhost:27018/inventory')
@@ -20,6 +20,7 @@ const yoga = createYoga({
       }
       type Query {
         activeAuctions: [Auction]
+        auction(id: ID!): Auction 
       }
       type Mutation {
         createAuction(title: String!, startingPrice: Float!, endTime: String!): Auction
@@ -29,6 +30,10 @@ const yoga = createYoga({
       Query: {
         activeAuctions: async (): Promise<IAuction[]> => {
           return await Auction.find();
+        },
+        // ADD THIS: Essential for Gateway Stitching/Merging
+        auction: async (_: any, { id }: { id: string }): Promise<IAuction | null> => {
+          return await Auction.findById(id);
         },
       },
       Mutation: {

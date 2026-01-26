@@ -8,12 +8,12 @@ package graph
 import (
 	"bidding-service/graph/model"
 	"context"
-	"fmt"
 )
 
 // FindAuctionByID is the resolver for the findAuctionByID field.
 func (r *entityResolver) FindAuctionByID(ctx context.Context, id string) (*model.Auction, error) {
-	panic(fmt.Errorf("not implemented: FindAuctionByID - findAuctionByID"))
+	// The Gateway provides the ID; we return a stub so field resolvers can fetch bids
+	return &model.Auction{ID: id}, nil
 }
 
 // Entity returns EntityResolver implementation.

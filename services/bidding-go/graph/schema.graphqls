@@ -1,0 +1,20 @@
+type Auction @key(fields: "id") {
+  id: ID! @external
+  bids: [Bid]
+}
+
+type Bid {
+  id: ID!
+  amount: Float!
+  bidderId: ID!
+  timestamp: String!
+}
+
+type Query {
+  # This acts as the entry point for the service
+  auction(id: ID!): Auction
+}
+
+type Mutation {
+  placeBid(auctionId: ID!, amount: Float!): Bid
+}

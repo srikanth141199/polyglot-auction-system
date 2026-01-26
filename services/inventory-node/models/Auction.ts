@@ -15,4 +15,4 @@ const AuctionSchema: Schema = new Schema({
   endTime: { type: Date, required: true },
 });
 
-export default mongoose.model<IAuction>('Auction', AuctionSchema);
+export const Auction = mongoose.model<IAuction>('Auction', AuctionSchema);

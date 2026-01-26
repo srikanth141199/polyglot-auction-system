@@ -1,10 +1,13 @@
+extend schema
+  @link(url: "https://specs.apollo.dev/federation/v2.0",
+        import: ["@key", "@shareable", "@external", "@requires"])
+
 type Auction @key(fields: "id") {
   id: ID!
-  title: String!
-  description: String
-  startingPrice: Float!
-  currentBid: Float
-  endTime: String!
+  title: String! @shareable
+  description: String @shareable
+  startingPrice: Float! @shareable
+  endTime: String! @shareable
   # This field will be resolved by the Go Bidding Service
   bids: [Bid]
 }
@@ -22,6 +25,5 @@ type Query {
 }
 
 type Mutation {
-  # This will be handled by the Go Service
   placeBid(auctionId: ID!, amount: Float!): Bid
 }
