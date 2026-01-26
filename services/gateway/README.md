@@ -1,6 +1,5 @@
-### 📂 3. Apollo Gateway (`/gateway`)
+### 📂 Apollo Gateway (`/gateway`)
 
-```markdown
 # Polyglot Auction Gateway
 
 The central entry point for the entire system. It composes the two subgraphs (Inventory and Bidding) into a single, unified GraphQL schema.
