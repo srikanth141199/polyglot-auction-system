@@ -12,6 +12,12 @@ import (
 	_ "github.com/lib/pq" // IMPORTANT: The Postgres Driver
 )
 
+import (
+    "github.com/golang-migrate/migrate/v4"
+    "github.com/golang-migrate/migrate/v4/database/postgres"
+    _ "github.com/golang-migrate/migrate/v4/source/file"
+)
+
 const defaultPort = "8080"
 
 func main() {
@@ -39,6 +45,8 @@ func main() {
 		DB: db,
 	}
 
+	runMigrations(db)
+
 	// 3. Create the GraphQL Server
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver}))
 
@@ -48,4 +56,24 @@ func main() {
 
 	log.Printf("🚀 Bidding Service ready at http://localhost:%s/", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
+}
+
+func runMigrations(db *sql.DB) {
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	
+	// This looks for the files in the 'migrations' folder you just created
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://migrations",
+		"postgres", driver)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+		log.Fatal(err)
+	}
+	log.Println("✅ Database migrations applied successfully!")
 }
