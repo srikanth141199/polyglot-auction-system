@@ -1,77 +1,110 @@
-1. Inventory Service (Node.js/MongoDB)
-Port: 4001 This service acts as the "source of truth" for auction item details. Use these queries to verify your MongoDB data.
+📍 Service Endpoints
+Service	Technology	Port	URL
 
-Get All Items:
+| Service                | Technology                       | Port | URL                                                            |
+| ---------------------- | -------------------------------- | ---- | -------------------------------------------------------------- |
+| **Apollo Gateway**     | Node.js + Apollo Federation      | 4000 | [http://localhost:4000/graphql](http://localhost:4000/graphql) |
+| **Inventory Subgraph** | Node.js + GraphQL Yoga + MongoDB | 5002 | [http://localhost:5002/graphql](http://localhost:5002/graphql) |
+| **Bidding Subgraph**   | Go + gqlgen + PostgreSQL         | 8080 | [http://localhost:8080/query](http://localhost:8080/query)     |
 
-GraphQL
-query {
-  activeAuctions {
-    id
-    title
-    startingPrice
-    endTime
-  }
-}
-Create a New Item:
 
-GraphQL
-mutation {
+
+🔍 1. Inventory Service (Port 5002)
+
+Handles the Product / Auction metadata side of the system.
+Data is stored in MongoDB.
+
+➕ Create a New Auction
+mutation CreateAuction {
   createAuction(
-    title: "Vintage Camera",
-    startingPrice: 50.0,
-    endTime: "2026-12-31"
+    title: "Vintage Camera"
+    startingPrice: 150.00
+    endTime: "2026-12-31T23:59:59Z"
   ) {
     id
     title
   }
 }
 
-
-
-
-2. Bidding Service (Go/PostgreSQL)
-Port: 8080 This service manages the bid transactions. You can query it directly using an ID obtained from the Inventory service.
-
-Get Bids for a Specific ID:
-
-GraphQL
-query {
-  auction(id: "PASTE_ID_HERE") {
+📦 Get All Active Auctions
+query GetItems {
+  activeAuctions {
     id
-    bids {
-      amount
-      bidderId
-      timestamp
-    }
+    title
+    startingPrice
   }
 }
-Place a New Bid:
 
-GraphQL
-mutation {
-  placeBid(auctionId: "PASTE_ID_HERE", amount: 150.50) {
+
+
+🔍 2. Bidding Service (Port 8080)
+
+Handles the Transactional / Bidding logic.
+Data is stored in PostgreSQL.
+
+⚠️ This service extends the Auction entity from the Inventory service using Apollo Federation.
+
+💰 Place a New Bid
+mutation PlaceNewBid {
+  placeBid(
+    auctionId: "PASTE_MONGODB_ID_HERE"
+    amount: 175.50
+  ) {
     id
     amount
     timestamp
   }
 }
 
+🔗 Internal Federation Query (_entities)
+
+Used internally by the Apollo Gateway to join Inventory + Bidding data.
+
+query GetBidsForEntity($rep: [_Any!]!) {
+  _entities(representations: $rep) {
+    ... on Auction {
+      id
+      bids {
+        amount
+        timestamp
+      }
+    }
+  }
+}
 
 
-3. Gateway (Apollo Gateway)
-Port: 4000 This is where the "magic" happens. The Gateway uses Federation to fetch titles from Node.js and bids from Go simultaneously.
+Variables
 
-The Federated Query (The "Join"):
+{
+  "rep": [
+    {
+      "__typename": "Auction",
+      "id": "ID_HERE"
+    }
+  ]
+}
 
-GraphQL
-query {
+
+
+🔍 3. Unified Gateway Queries (Port 4000)
+
+This is the main interview showcase 🎯
+Demonstrates a real federated JOIN between MongoDB (Inventory) and PostgreSQL (Bidding).
+
+🏆 Full System View (“Money Query”)
+query GetAllDetails {
   activeAuctions {
     id
-    title          # Comes from Node.js/MongoDB
-    startingPrice  # Comes from Node.js/MongoDB
-    bids {         # Comes from Go/PostgreSQL
+    title
+    description
+    startingPrice
+
+    # JOIN: Data fetched from Go (Bidding) service
+    bids {
+      id
       amount
       bidderId
+      timestamp
     }
   }
 }
