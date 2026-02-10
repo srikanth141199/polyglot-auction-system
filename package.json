@@ -1,0 +1,13 @@
+{
+  "name": "polyglot-auction-system-root",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "concurrently -n \"INVENTORY,BIDDING,GATEWAY\" -c \"bgBlue.bold,bgMagenta.bold,bgYellow.bold\" \"npm run dev:inventory\" \"npm run dev:bidding\" \"npm run dev:gateway\"",
+    "dev:inventory": "npm start --prefix services/inventory-node",
+    "dev:bidding": "powershell -Command \"cd services/bidding-go; $env:GOTOOLCHAIN='local'; go run server.go\"",
+    "dev:gateway": "powershell -Command \"Start-Sleep -s 5; npm start --prefix services/gateway\""
+  },
+  "dependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

@@ -17,11 +17,11 @@ Open three separate terminals and run the following:
 ```powershell
 cd services/inventory-node
 npm install
-npm run dev
+npm start
 # Running at http://localhost:5002/graphql
 
 
-B. Bidding Service (Go)
+#### **B. Bidding Service (Go)**
 
 cd services/bidding-go
 # Force local toolchain for Go 1.23 compatibility
@@ -31,7 +31,7 @@ go run server.go
 # Running at http://localhost:8080/query
 
 
-C. API Gateway (Apollo)
+#### **C. API Gateway (Apollo)**
 
 cd services/gateway
 npm install
