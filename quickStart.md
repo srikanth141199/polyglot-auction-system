@@ -14,19 +14,19 @@ Ensure your local databases are running on the following ports:
 This project uses `concurrently` to manage the multi-language microservice ecosystem. You can start the entire backend (Go, Node.js, and the Gateway) with a single command.
 
 From the root directory, install the orchestration dependencies:
-```powershell
+powershell
 npm install
 
 ### 3. Start the Ecosystem
 Run the unified development command:
 
-```powerShell
+powerShell
 npm run dev
 
 ### If above unified start is not working refer below implementation to start servers individually
 
 #### **A. Inventory Service (Node.js)**
-```powershell
+powershell
 cd services/inventory-node
 npm install
 npm start
