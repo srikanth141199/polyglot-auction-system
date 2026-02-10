@@ -11,7 +11,19 @@ Ensure your local databases are running on the following ports:
 * **RabbitMQ:** `localhost:5672` (Management UI at `15672`)
 
 ### 2. Start Subgraphs
-Open three separate terminals and run the following:
+This project uses `concurrently` to manage the multi-language microservice ecosystem. You can start the entire backend (Go, Node.js, and the Gateway) with a single command.
+
+From the root directory, install the orchestration dependencies:
+```powershell
+npm install
+
+### 3. Start the Ecosystem
+Run the unified development command:
+
+```powerShell
+npm run dev
+
+### If above unified start is not working refer below implementation to start servers individually
 
 #### **A. Inventory Service (Node.js)**
 ```powershell
