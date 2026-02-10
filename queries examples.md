@@ -9,7 +9,7 @@ Service	Technology	Port	URL
 
 
 
-🔍 1. Inventory Service (Port 5002)
+### 🔍 1. Inventory Service (Port 5002)
 
 ![Inventory](inventory.png)
 
@@ -39,7 +39,7 @@ query GetItems {
 
 
 
-🔍 2. Bidding Service (Port 8080)
+### 🔍 2. Bidding Service (Port 8080)
 
 ![biddingApp](bidding.png)
 
@@ -90,7 +90,7 @@ Variables
 
 
 
-🔍 3. Unified Gateway Queries (Port 4000)
+### 🔍 3. Unified Gateway Queries (Port 4000)
 
 ![Gateway](gateway.png)
 
