@@ -6,6 +6,7 @@ package graph
 
 import (
 	"bidding-service/graph/model"
+	"bidding-service/pkg/rabbitmq"
 	"context"
 	"fmt"
 	"time"
@@ -46,8 +47,7 @@ func (r *mutationResolver) PlaceBid(ctx context.Context, auctionID string, amoun
 	// 1. Create a timestamp for the bid
 	now := time.Now()
 
-	// 2. Prepare the SQL query to insert into your 'bids' table
-	// We assume 'user-123' for now; in a real app, you'd get this from the Auth context
+	// 2. DATABASE INSERT (Essential: This service owns the truth for Bids)
 	query := `INSERT INTO bids (auction_id, amount, bidder_id, created_at) 
               VALUES ($1, $2, $3, $4) 
               RETURNING id`
@@ -60,13 +60,25 @@ func (r *mutationResolver) PlaceBid(ctx context.Context, auctionID string, amoun
 		return nil, fmt.Errorf("failed to place bid: %w", err)
 	}
 
-	// 3. Return the newly created Bid object
-	return &model.Bid{
+	// Create the model to return and to send to RabbitMQ
+	newBid := &model.Bid{
 		ID:        id,
 		Amount:    amount,
 		BidderID:  "user-123",
 		Timestamp: now.Format(time.RFC3339),
-	}, nil
+	}
+
+	// 3. RABBITMQ BROADCAST (Asynchronous)
+	// We use a Goroutine (go ...) so the user doesn't wait for RabbitMQ to respond.
+	go rabbitmq.PublishBidEvent(rabbitmq.BidEvent{
+		AuctionID: auctionID,
+		Amount:    amount,
+		BidderID:  newBid.BidderID,
+		Timestamp: newBid.Timestamp,
+	})
+
+	// 4. Return to React
+	return newBid, nil
 }
 
 // ServiceMetadata is the resolver for the _serviceMetadata field.
